@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { questions, numberValue, startingState } from '../src/data.js';
+import { questions } from '../src/domain/catalog.ts';
+import { numberValue } from '../src/domain/locale.ts';
+import { startingState } from '../src/domain/storage.ts';
 
 const readState = page => page.evaluate(() => JSON.parse(localStorage.getItem('peyrizi-v1')));
 
@@ -95,11 +97,11 @@ test('ten-question mixed exam completes with genuine answers and a score', async
  expect((await readState(page)).attempts).toHaveLength(10);
 });
 
-test('all five calculators use their stated formulas and reject empty inputs', async ({page}) => {
+test('all calculators use their stated formulas and reject empty inputs', async ({page}) => {
  await page.goto('/#workshop');
  await page.getByRole('button',{name:'محاسبه و یادگیری'}).click();
  await expect(page.getByRole('alert')).toContainText('همه فیلدها');
- const cases=[['حجم و هزینه بتن',40],['سود و حاشیه سود',20],['جریان نقدی پروژه',40000000],['کنترل ارزش کسب‌شده',.8],['مصالح و پرت خرید',105]];
+ const cases=[['حجم و هزینه بتن',40],['سود و حاشیه سود',20],['جریان نقدی پروژه',40000000],['کنترل ارزش کسب‌شده',.8],['مصالح و پرت خرید',105],['تحقق برنامه هفتگی',70]];
  for(const [label,expected] of cases){
   await page.locator('.calculator-nav').getByRole('button',{name:label}).click();
   await page.getByRole('button',{name:'پر کردن با مثال'}).click();
@@ -151,4 +153,21 @@ test('all principal pages render on mobile without horizontal overflow and navig
  await page.locator('.sidebar').getByRole('link',{name:'پیشخوان',exact:true}).click();
  await expect(page.locator('.sidebar')).not.toHaveClass(/open/);
  expect(errors).toEqual([]);
+});
+
+test('course progress filter reflects completed work and resets an empty result', async ({page}) => {
+ await page.goto('/#courses');
+ const status = page.getByRole('combobox', {name: 'وضعیت پیشرفت'});
+ await status.selectOption('in-progress');
+ await expect(page.locator('.all-courses .course-card')).toHaveCount(0);
+ await page.getByRole('button', {name: 'پاک کردن فیلترها'}).click();
+ await expect(page.locator('.all-courses .course-card')).toHaveCount(8);
+ await page.goto('/#lesson/construction-1');
+ await page.getByRole('button', {name: 'مطالعه کردم و یاد گرفتم'}).click();
+ await page.goto('/#courses');
+ await status.selectOption('in-progress');
+ await expect(page.locator('.all-courses .course-card')).toHaveCount(1);
+ await expect(page.locator('.all-courses .course-card')).toContainText('از زمین تا ساختمان');
+ await page.getByRole('textbox', {name: 'جستجو در درس‌ها'}).fill('نقشه خواني');
+ await expect(page.locator('.search-results button').first()).toContainText('نقشه‌خوانی');
 });

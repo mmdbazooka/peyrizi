@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { allLessons, courses, questions, numberValue, loadState, startingState } from '../src/data.js';
+import { allLessons, courses, questions } from '../src/domain/catalog.ts';
+import { numberValue } from '../src/domain/locale.ts';
+import { loadState, startingState } from '../src/domain/storage.ts';
 
 test('Persian and Arabic calculation inputs normalize without treating blanks as zero', () => {
   assert.equal(numberValue('۱۲۳٬۴۵۶٫۷۸'), 123456.78);
